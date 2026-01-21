@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="DWM" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Provides access to Windows Desktop Window Manager (DWM) APIs for advanced window effects and customization.
+		提供对 Windows 桌面窗口管理器 (DWM) API 的访问，用于高级窗口效果和自定义。
+	</brief_description>
+	<description>
+		The [DWM] class allows you to interact with Windows Desktop Window Manager to enable modern Windows 11/10 visual effects such as Mica, Acrylic backdrop materials, custom title bar colors, dark mode, and extend the window frame into client area.
+		
+		This class is only available on Windows platforms and most methods require a [Window] node as target. All methods are static, so you don't need to instantiate the class.
+		
+		[b]Note:[/b] Some features require specific Windows versions. For example, [method set_systembackdrop_type] requires Windows 11 Build 22000 or later for Mica effects.
+		
+		[DWM] 类允许您与 Windows 桌面窗口管理器交互，以启用现代 Windows 11/10 视觉效果，如 Mica、亚克力背景材质、自定义标题栏颜色、深色模式以及将窗口框架扩展到客户端区域。
+		
+		此类仅在 Windows 平台上可用，且大多数方法需要 [Window] 节点作为目标。所有方法都是静态的，因此您无需实例化该类。
+		
+		[b]注意：[/b]某些功能需要特定 Windows 版本。例如，[method set_systembackdrop_type] 需要 Windows 11 Build 22000 或更高版本才能使用 Mica 效果。
+	</description>
+	<tutorials>
+		<link title="Custom Window Title Bars in Godot">https://docs.godotengine.org/en/stable/tutorials/ui/custom_window_title_bars.html</link>
+		</tutorials>
+	<methods>
+		<method name="enable_dark_mode" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="enable" type="bool" />
+			<description>
+				Enables or disables dark mode for the specified window's title bar and borders. This affects the native window decorations when using [member DisplayServer.window_set_flag] with [constant DisplayServer.WINDOW_FLAG_BORDERLESS] set to [code]false[/code].
+				
+				[codeblock]
+				# Enable dark mode for the main window
+				DWM.enable_dark_mode(get_window(), true)
+				[/codeblock]
+				
+				为指定窗口的标题栏和边框启用或禁用深色模式。当使用 [member DisplayServer.window_set_flag] 并将 [constant DisplayServer.WINDOW_FLAG_BORDERLESS] 设置为 [code]false[/code] 时，这会影响原生窗口装饰。
+				
+				[codeblock]
+				# 为主窗口启用深色模式
+				DWM.enable_dark_mode(get_window(), true)
+				[/codeblock]
+			</description>
+		</method>
+		<method name="enable_hostbackdropbrush" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="enable" type="bool" />
+			<description>
+				Enables or disables the host backdrop brush effect for the window. This is an older DWM effect that allows the window behind to show through. Consider using [method set_systembackdrop_type] for modern alternatives.
+				
+				启用或禁用窗口的主机背景画笔效果。这是一种较旧的 DWM 效果，允许显示后面的窗口。请考虑使用 [method set_systembackdrop_type] 以获得现代替代方案。
+			</description>
+		</method>
+		<method name="enable_mmcss" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="enable" type="bool" />
+			<description>
+				Enables or disables Multimedia Class Scheduler Service (MMCSS) for the current process. This can help improve performance for multimedia applications by prioritizing threads.
+				
+				为当前进程启用或禁用多媒体类计划程序服务 (MMCSS)。这可以通过优先处理线程来帮助提高多媒体应用程序的性能。
+			</description>
+		</method>
+		<method name="extend_frame_into_client_area" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="left" type="int" />
+			<param index="2" name="right" type="int" />
+			<param index="3" name="top" type="int" />
+			<param index="4" name="bottom" type="int" />
+			<description>
+				Extends the window frame into the client area by specified margins. This is useful for creating custom title bars while keeping native window controls. Set margins to [code]-1[/code] to extend fully in that direction.
+				
+				[codeblock]
+				# Extend only the top for a custom title bar
+				DWM.extend_frame_into_client_area(get_window(), 0, 0, 32, 0)
+				[/codeblock]
+				
+				将窗口框架按指定边距扩展到客户端区域。这对于在保留原生窗口控件的同时创建自定义标题栏非常有用。将边距设置为 [code]-1[/code] 可在该方向完全扩展。
+				
+				[codeblock]
+				# 仅扩展顶部以创建自定义标题栏
+				DWM.extend_frame_into_client_area(get_window(), 0, 0, 32, 0)
+				[/codeblock]
+			</description>
+		</method>
+		<method name="get_border_color" qualifiers="static">
+			<return type="Color" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns the current border color of the window as a [Color].
+				
+				返回窗口的当前边框颜色，以 [Color] 形式表示。
+			</description>
+		</method>
+		<method name="get_colorization_color" qualifiers="static">
+			<return type="Color" />
+			<description>
+				Returns the user's global DWM colorization color (the color used for window borders and taskbar). This respects the user's Windows personalization settings.
+				
+				返回用户的全局 DWM 颜色（用于窗口边框和任务栏的颜色）。这遵循用户的 Windows 个性化设置。
+			</description>
+		</method>
+		<method name="get_composition_timing_info" qualifiers="static">
+			<return type="Dictionary" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns timing information about the DWM composition process as a Dictionary. Contains data like refresh rate, composition rate, and frame delays.
+				
+				[b]Note:[/b] This is intended for debugging and performance monitoring purposes.
+				
+				返回有关 DWM 合成过程的时序信息，以字典形式提供。包含刷新率、合成速率和帧延迟等数据。
+				
+				[b]注意：[/b]此功能用于调试和性能监控目的。
+			</description>
+		</method>
+		<method name="get_title_bar_color" qualifiers="static">
+			<return type="Color" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns the current title bar color of the window as a [Color].
+				
+				返回窗口的当前标题栏颜色，以 [Color] 形式表示。
+			</description>
+		</method>
+		<method name="is_composition_enabled" qualifiers="static">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if DWM composition is enabled system-wide. Composition is required for most visual effects.
+				
+				如果系统范围内启用了 DWM 合成，则返回 [code]true[/code]。大多数视觉效果都需要合成。
+			</description>
+		</method>
+		<method name="is_title_bar_coloring_supported" qualifiers="static">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if the current Windows version supports custom title bar coloring. Always check this before calling color-related methods.
+				
+				如果当前 Windows 版本支持自定义标题栏着色，则返回 [code]true[/code]。在调用与颜色相关的方法之前，请务必检查此项。
+			</description>
+		</method>
+		<method name="reset_to_default_colors" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Resets the window's title bar and border colors to system defaults.
+				
+				将窗口的标题栏和边框颜色重置为系统默认值。
+			</description>
+		</method>
+		<method name="set_border_color" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="color" type="Color" />
+			<description>
+				Sets a custom color for the window border.
+				
+				为窗口边框设置自定义颜色。
+			</description>
+		</method>
+		<method name="set_systembackdrop_type" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="type" type="int" enum="DWM.SystembackdropType" />
+			<description>
+				Sets the system backdrop material type for the window. Available options are:
+				- [constant AUTO]: Automatically choose based on window type
+				- [constant NONE]: No backdrop effect
+				- [constant MAINWINDOW]: Mica effect for main windows (Windows 11+)
+				- [constant TRANSIENTWINDOW]: Acrylic effect for transient windows
+				- [constant TABBEDWINDOW]: Mica Alt effect for tabbed interfaces
+				
+				[codeblock]
+				# Apply Mica effect to main window
+				DWM.set_systembackdrop_type(get_window(), DWM.MAINWINDOW)
+				[/codeblock]
+				
+				为窗口设置系统背景材质类型。可用选项包括：
+				- [constant AUTO]：根据窗口类型自动选择
+				- [constant NONE]：无背景效果
+				- [constant MAINWINDOW]：主窗口的 Mica 效果（Windows 11+）
+				- [constant TRANSIENTWINDOW]：瞬态窗口的亚克力效果
+				- [constant TABBEDWINDOW]：选项卡式界面的 Mica Alt 效果
+				
+				[codeblock]
+				# 为主窗口应用 Mica 效果
+				DWM.set_systembackdrop_type(get_window(), DWM.MAINWINDOW)
+				[/codeblock]
+			</description>
+		</method>
+		<method name="set_title_bar_color" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="color" type="Color" />
+			<param index="2" name="sync_border" type="bool" default="true" />
+			<description>
+				Sets a custom color for the title bar. If [param sync_border] is [code]true[/code], the border color will be synchronized with the title bar color.
+				
+				[codeblock]
+				# Set a red title bar
+				DWM.set_title_bar_color(get_window(), Color(0.8, 0.1, 0.1))
+				[/codeblock]
+				
+				为标题栏设置自定义颜色。如果 [param sync_border] 为 [code]true[/code]，边框颜色将与标题栏颜色同步。
+				
+				[codeblock]
+				# 设置红色标题栏
+				DWM.set_title_bar_color(get_window(), Color(0.8, 0.1, 0.1))
+				[/codeblock]
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="AUTO" value="0" enum="SystembackdropType">
+			Automatically selects an appropriate backdrop type based on the window's context and type.
+			根据窗口的上下文和类型自动选择适当的背景类型。
+		</constant>
+		<constant name="NONE" value="1" enum="SystembackdropType">
+			No system backdrop effect; uses traditional rendering.
+			无系统背景效果；使用传统渲染。
+		</constant>
+		<constant name="MAINWINDOW" value="2" enum="SystembackdropType">
+			Applies the Mica backdrop material, ideal for main application windows. Available on Windows 11 Build 22000+.
+			应用 Mica 背景材质，适用于主应用程序窗口。可在 Windows 11 Build 22000+ 上使用。
+		</constant>
+		<constant name="TRANSIENTWINDOW" value="3" enum="SystembackdropType">
+			Applies the Acrylic backdrop material, suitable for transient windows like dialogs and flyouts.
+			应用亚克力背景材质，适用于对话框和弹出窗口等瞬态窗口。
+		</constant>
+		<constant name="TABBEDWINDOW" value="4" enum="SystembackdropType">
+			Applies the Mica Alt backdrop material, optimized for applications with tabbed interfaces.
+			应用 Mica Alt 背景材质，针对具有选项卡式界面的应用程序进行了优化。
+		</constant>
+	</constants>
+</class>
