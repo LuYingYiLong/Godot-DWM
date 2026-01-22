@@ -1,3 +1,5 @@
+<img width="3400" height="920" alt="dwm_banner" src="https://github.com/user-attachments/assets/db79696c-4c83-4dd6-8058-4659766dd7af" />
+
 # Godot DWM Plugin
 
 **Windows Desktop Window Manager (DWM) Integration for Godot 4**
