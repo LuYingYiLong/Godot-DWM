@@ -49,7 +49,7 @@ This Godot plugin provides direct access to Windows Desktop Window Manager (DWM)
 
 1. **下载插件** (Download the plugin)
    ```bash
-   git clone https://github.com/yourusername/godot-dwm-plugin.git
+   git clone https://github.com/LuYingYiLong/GodotDWM.git
    ```
 
 2. **安装到项目** (Install to project)
