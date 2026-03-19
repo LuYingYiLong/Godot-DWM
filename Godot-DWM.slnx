@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Godot-DWM.vcxproj" />
+  <Project Path="Godot-DWM.vcxproj" Id="428c44c1-337c-474c-ba09-da04b3984eb2" />
 </Solution>

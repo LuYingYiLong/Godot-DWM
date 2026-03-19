@@ -1,18 +1,23 @@
 #include "dwm.h"
 
-#include <godot_cpp/core/defs.hpp>
-#include <godot_cpp/variant/utility_functions.hpp>
-#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/display_server.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/window.hpp>
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/defs.hpp>
+#include <godot_cpp/variant/color.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/variant/vector2i.hpp>
 
 namespace godot {
-
 	void DWM::_bind_methods() {
-		BIND_ENUM_CONSTANT(AUTO);
-		BIND_ENUM_CONSTANT(NONE);
-		BIND_ENUM_CONSTANT(MAINWINDOW);
-		BIND_ENUM_CONSTANT(TRANSIENTWINDOW);
-		BIND_ENUM_CONSTANT(TABBEDWINDOW);
+		BIND_ENUM_CONSTANT(SYSTEMBACKDROP_TYPE_AUTO);
+		BIND_ENUM_CONSTANT(SYSTEMBACKDROP_TYPE_NONE);
+		BIND_ENUM_CONSTANT(SYSTEMBACKDROP_TYPE_MAINWINDOW);
+		BIND_ENUM_CONSTANT(SYSTEMBACKDROP_TYPE_TRANSIENTWINDOW);
+		BIND_ENUM_CONSTANT(SYSTEMBACKDROP_TYPE_TABBEDWINDOW);
+
 		ClassDB::bind_static_method("DWM", D_METHOD("is_composition_enabled"), &DWM::is_composition_enabled);
 		ClassDB::bind_static_method("DWM", D_METHOD("set_title_bar_color", "target_window", "color", "sync_border"), &DWM::set_title_bar_color, DEFVAL(true));
 		ClassDB::bind_static_method("DWM", D_METHOD("get_title_bar_color", "target_window"), &DWM::get_title_bar_color);
@@ -31,34 +36,22 @@ namespace godot {
 
 	HWND DWM::_get_godot_window_handle(Window* target_window) {
 #ifdef _WIN32
-		if (!target_window) {
-			UtilityFunctions::push_error("Target window is null.");
-			return nullptr;
-		}
+		ERR_FAIL_COND_V_MSG(!target_window, nullptr, "Target window is null.");
+
 		Window* window_node = Object::cast_to<Window>(target_window);
-		if (!window_node) {
-			UtilityFunctions::push_error("The provided object is not a Window node.");
-			return nullptr;
-		}
+		ERR_FAIL_COND_V_MSG(!window_node, nullptr, "The provided object is not a Window node.");
+
 		DisplayServer* display_server = DisplayServer::get_singleton();
-		if (display_server == nullptr) {
-			UtilityFunctions::push_error("Failed to get the DisplayServer singleton.");
-			return nullptr;
-		}
+		ERR_FAIL_COND_V_MSG(!display_server, nullptr, "Failed to get the DisplayServer singleton.");
+		
 		// 获取本机窗口句柄
 		int64_t hwnd_int = display_server->window_get_native_handle(DisplayServer::WINDOW_HANDLE, window_node->get_window_id());
+		ERR_FAIL_COND_V_MSG(!hwnd_int, nullptr, "Got null native handle.");
 
-		if (!hwnd_int) {
-			UtilityFunctions::push_error("Got null native handle.");
-			return nullptr;
-		}
 		// 转换为HWND类型
 		HWND hwnd = reinterpret_cast<HWND>(hwnd_int);
+		ERR_FAIL_COND_V_MSG(!IsWindow(hwnd), nullptr, "The obtained handle is not a valid window.");
 
-		if (!IsWindow(hwnd)) {
-			UtilityFunctions::push_error("The obtained handle is not a valid window.");
-			return nullptr;
-		}
 		return hwnd;
 #else
 		return nullptr;
@@ -80,38 +73,44 @@ namespace godot {
 #ifdef _WIN32
 		// 获取Godot窗口句柄
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
+		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");
+
 		// 将Color转换为COLORREF ([0.0, 1.0]范围转换为[0, 255]范围)
 		int r = CLAMP(color.r * 255, 0, 255);
 		int g = CLAMP(color.g * 255, 0, 255);
 		int b = CLAMP(color.b * 255, 0, 255);
+
 		// 启用暗模式标题栏
 		BOOL dark_mode = TRUE;
 		HRESULT hr_dark = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
-		if (FAILED(hr_dark)) UtilityFunctions::push_warning("Failed to set dark mode, results may vary");
+		ERR_FAIL_COND_MSG(FAILED(hr_dark), "Failed to set dark mode, results may vary");
+
 		// 设置标题栏颜色
 		COLORREF caption_color = RGB(r, g, b);
 		HRESULT hr_caption = DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &caption_color, sizeof(caption_color));
-		if (FAILED(hr_caption)) UtilityFunctions::push_error("Failed to set caption color - feature may not be supported");
+		ERR_FAIL_COND_MSG(FAILED(hr_caption), "Failed to set caption color - feature may not be supported");
+
 		// 根据亮度自动选择文本颜色（黑色或白色）
 		float brightness = (r * 0.299f + g * 0.587f + b * 0.114f) / 255.0f;
 		COLORREF text_color = (brightness > 0.6f) ? RGB(0, 0, 0) : RGB(255, 255, 255);
 		HRESULT hr_text = DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, &text_color, sizeof(text_color));
+
 		// 如果同步边框颜色，则设置边框颜色 (与标题栏颜色相同)
 		if (sync_border) {
 			COLORREF border_color = RGB(r, g, b);
 			DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &border_color, sizeof(border_color));
 		}
 #else
-		UtilityFunctions::push_error("Title bar color modification is only supported on Windows");
+		ERR_FAIL_COND_MSG(true, "Title bar color modification is only supported on Windows");
 #endif
 	}
 
 	void DWM::set_border_color(Window* target_window, const Color& color) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
-		// 将Color转换为COLORREF ([0.0, 1.0]范围转换为[0, 255]范围)
+		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");
+
+		// 将 Color 转换为COLORREF ([0.0, 1.0] 范围转换为 [0, 255] 范围)
 		int r = CLAMP(color.r * 255, 0, 255);
 		int g = CLAMP(color.g * 255, 0, 255);
 		int b = CLAMP(color.b * 255, 0, 255);
@@ -124,9 +123,9 @@ namespace godot {
 	void DWM::set_title_bar_text_color(Window* target_window, const Color& color) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
+		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");
 
-		// 将Color转换为COLORREF ([0.0, 1.0]范围转换为[0, 255]范围)
+		// 将 Color 转换为 COLORREF ([0.0, 1.0] 范围转换为 [0, 255] 范围)
 		int r = CLAMP(color.r * 255, 0, 255);
 		int g = CLAMP(color.g * 255, 0, 255);
 		int b = CLAMP(color.b * 255, 0, 255);
@@ -140,79 +139,74 @@ namespace godot {
 	Color DWM::get_title_bar_color(Window* target_window) {
 #ifdef _WIN32
 		HWND hwnd = DWM::_get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return Color(1, 1, 1, 1); // 默认白色
+		ERR_FAIL_COND_V_MSG(!IsWindow(hwnd), Color(1, 1, 1, 1), "HWND is invalid");
+
 		COLORREF caption_color = 0;
 		HRESULT hr = DwmGetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &caption_color, sizeof(caption_color));
-		if (SUCCEEDED(hr)) {
-			// 提取RGB分量
-			uint8_t r = (caption_color >> 16) & 0xFF;
-			uint8_t g = (caption_color >> 8) & 0xFF;
-			uint8_t b = caption_color & 0xFF;
-			// 转换为Godot的Color格式 ([0, 255]范围转换为[0.0, 1.0]范围)
-			return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
-		}
-		else {
-			UtilityFunctions::push_error("Failed to get caption color - feature may not be supported");
-			return Color(1, 1, 1, 1); // 默认白色
-		}
+		ERR_FAIL_COND_V_MSG(FAILED(hr), Color(1, 1, 1, 1), "Failed to get caption color - feature may not be supported");
+
+		// 提取 RGB 分量
+		uint8_t r = (caption_color >> 16) & 0xFF;
+		uint8_t g = (caption_color >> 8) & 0xFF;
+		uint8_t b = caption_color & 0xFF;
+
+		// 转换为 Godot 的 Color 格式 ([0, 255] 范围转换为 [0.0, 1.0] 范围)
+		return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
 #endif
 	}
 
 	Color DWM::get_title_bar_text_color(Window* target_window) {
 #ifdef _WIN32
 		HWND hwnd = DWM::_get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return Color(1, 1, 1, 1); // 默认白色
+		ERR_FAIL_COND_V_MSG(!IsWindow(hwnd), Color(1, 1, 1, 1), "HWND is invalid");
+
 		COLORREF text_color = 0;
 		HRESULT hr = DwmGetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, &text_color, sizeof(text_color));
+		ERR_FAIL_COND_V_MSG(FAILED(hr), Color(1, 1, 1, 1), "Failed to get title bar text color - feature may not be supported");
 
-		if (SUCCEEDED(hr)) {
-			// 提取RGB分量
-			uint8_t r = (text_color >> 16) & 0xFF;
-			uint8_t g = (text_color >> 8) & 0xFF;
-			uint8_t b = text_color & 0xFF;
-			// 转换为Godot的Color格式 ([0, 255]范围转换为[0.0, 1.0]范围)
-			return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
-		}
-		else {
-			UtilityFunctions::push_error("Failed to get text color - feature may not be supported");
-			return Color(1, 1, 1, 1); // 默认白色
-		}
+		// 提取RGB分量
+		uint8_t r = (text_color >> 16) & 0xFF;
+		uint8_t g = (text_color >> 8) & 0xFF;
+		uint8_t b = text_color & 0xFF;
+
+		// 转换为 Godot 的 Color 格式 ([0, 255] 范围转换为 [0.0, 1.0] 范围)
+		return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
 #endif
 	}
 
 	Color DWM::get_border_color(Window* target_window) {
 #ifdef _WIN32
 		HWND hwnd = DWM::_get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return Color(1, 1, 1, 1);	// 默认白色
+		ERR_FAIL_COND_V_MSG(!IsWindow(hwnd), Color(1, 1, 1, 1), "HWND is invalid");
+
 		COLORREF border_color = 0;
 		HRESULT hr = DwmGetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &border_color, sizeof(border_color));
-		if (SUCCEEDED(hr)) {
-			// 提取RGB分量
-			uint8_t r = (border_color >> 16) & 0xFF;
-			uint8_t g = (border_color >> 8) & 0xFF;
-			uint8_t b = border_color & 0xFF;
-			// 转换为Godot的Color格式 ([0, 255]范围转换为[0.0, 1.0]范围)
-			return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
-		}
-		else {
-			UtilityFunctions::push_error("Failed to get border color - feature may not be supported");
-			return Color(1, 1, 1, 1); // 默认白色
-		}
+		ERR_FAIL_COND_V_MSG(FAILED(hr), Color(1, 1, 1, 1), "Failed to get border color - feature may not be supported");
+
+		// 提取 RGB 分量
+		uint8_t r = (border_color >> 16) & 0xFF;
+		uint8_t g = (border_color >> 8) & 0xFF;
+		uint8_t b = border_color & 0xFF;
+
+		// 转换为 Godot 的 Color 格式 ([0, 255] 范围转换为 [0.0, 1.0] 范围)
+		return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
 #endif
 	}
 
 	void DWM::reset_to_default_colors(Window* target_window) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
+		ERR_FAIL_COND_MSG(!hwnd, "HWND is invalid");
+		
 		COLORREF default_color = 0xFFFFFFFF;
 		DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &default_color, sizeof(default_color));
 		DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, &default_color, sizeof(default_color));
 		DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &default_color, sizeof(default_color));
+
 		BOOL system_dark_mode = FALSE;
 		DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &system_dark_mode, sizeof(system_dark_mode));
 #else
-		UtilityFunctions::push_error("Not supported on this platform");
+		ERR_FAIL_COND_MSG(true, "Not supported on this platform");
 #endif
 	}
 
@@ -223,20 +217,22 @@ namespace godot {
 		VER_SET_CONDITION(condition_mask, VER_MAJORVERSION, VER_GREATER_EQUAL);
 		VER_SET_CONDITION(condition_mask, VER_MINORVERSION, VER_GREATER_EQUAL);
 		VER_SET_CONDITION(condition_mask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
 		// Windows 11 的内核版本依然是 10.0，但构建号起始于 22000
 		osvi.dwMajorVersion = 10;
 		osvi.dwMinorVersion = 0;
 		osvi.dwBuildNumber = 22000;
 		return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, condition_mask) != FALSE;
 #else
-		return false;
+		ERR_FAIL_COND_V_MSG(true, false, "Not supported on this platform");
 #endif
 	}
 
 	void DWM::enable_dark_mode(Window* target_window, bool enable) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
+		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");
+
 		BOOL dark_mode = enable ? TRUE : FALSE;
 		HRESULT hr = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
 		if (FAILED(hr)) UtilityFunctions::push_error("Failed to set dark mode - feature may not be supported");
@@ -246,7 +242,8 @@ namespace godot {
 	void DWM::extend_frame_into_client_area(Window* target_window, int left, int right, int top, int bottom) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
+		ERR_FAIL_COND_MSG(!hwnd, "HWND is invalid");
+
 		MARGINS margins;
 		margins.cxLeftWidth = left;
 		margins.cxRightWidth = right;
@@ -281,8 +278,8 @@ namespace godot {
 
 	Dictionary DWM::get_composition_timing_info(Window* target_window) {
 #ifdef _WIN32
-		HWND hwnd = GetAncestor(_get_godot_window_handle(target_window), GA_ROOT);	// 获取顶级窗口句柄
-		if (!IsWindow(hwnd)) return Dictionary();
+		HWND hwnd = GetAncestor(_get_godot_window_handle(target_window), GA_ROOT);
+		ERR_FAIL_COND_V_MSG(!IsWindow(hwnd), Dictionary(), "HWND is invalid");
 
 		DWM_TIMING_INFO timing_info = {};
 		timing_info.cbSize = sizeof(DWM_TIMING_INFO);
@@ -347,12 +344,10 @@ namespace godot {
 			default:
 				error_msg += "";
 			}
-			UtilityFunctions::push_error(error_msg);
-			return Dictionary();
+			ERR_FAIL_COND_V_MSG(FAILED(hr), Dictionary(), error_msg);
 		}
 		else {
-			UtilityFunctions::push_error("Failed to get composition timing info - feature may not be supported");
-			return Dictionary();
+			ERR_FAIL_COND_V_MSG(true, Dictionary(), "Failed to get composition timing info - feature may not be supported");
 		}
 #else
 		return Dictionary();
@@ -362,7 +357,8 @@ namespace godot {
 	void DWM::enable_hostbackdropbrush(Window * target_window, bool enable) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
+		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");
+
 		BOOL hostbackdropbrush = enable ? TRUE : FALSE;
 		HRESULT hr = DwmSetWindowAttribute(hwnd, DWMWA_USE_HOSTBACKDROPBRUSH, &hostbackdropbrush, sizeof(hostbackdropbrush));
 		if (FAILED(hr)) UtilityFunctions::push_error("Failed to use hostbackdropbrush");
@@ -372,17 +368,19 @@ namespace godot {
 	void DWM::set_systembackdrop_type(Window* target_window, SystembackdropType p_type) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
-		if (hwnd == nullptr) return;
+		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");
+
 		DWM_SYSTEMBACKDROP_TYPE type = DWMSBT_AUTO;
 		switch (p_type) {
-		case AUTO: type = DWMSBT_AUTO; break;
-		case NONE: type = DWMSBT_NONE; break;
-		case MAINWINDOW: type = DWMSBT_MAINWINDOW; break;
-		case TRANSIENTWINDOW: type = DWMSBT_TRANSIENTWINDOW; break;
-		case TABBEDWINDOW: type = DWMSBT_TABBEDWINDOW; break;
+		case SYSTEMBACKDROP_TYPE_AUTO: type = DWMSBT_AUTO; break;
+		case SYSTEMBACKDROP_TYPE_NONE: type = DWMSBT_NONE; break;
+		case SYSTEMBACKDROP_TYPE_MAINWINDOW: type = DWMSBT_MAINWINDOW; break;
+		case SYSTEMBACKDROP_TYPE_TRANSIENTWINDOW: type = DWMSBT_TRANSIENTWINDOW; break;
+		case SYSTEMBACKDROP_TYPE_TABBEDWINDOW: type = DWMSBT_TABBEDWINDOW; break;
 		}
+
 		HRESULT hr = DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &type, sizeof(type));
-		if (FAILED(hr)) UtilityFunctions::push_error("Failed to set systembackdrop type");
+		ERR_FAIL_COND_MSG(FAILED(hr), "Failed to set systembackdrop type");
 #endif // _WIN32
 	}
 
@@ -390,7 +388,7 @@ namespace godot {
 #ifdef _WIN32
 		BOOL mmcss = enable ? TRUE : FALSE;
 		HRESULT hr = DwmEnableMMCSS(mmcss);
-		if (FAILED(hr)) UtilityFunctions::push_error("Failed to enable MMCSS");
+		ERR_FAIL_COND_MSG(FAILED(hr), "Failed to enable MMCSS");
 #endif // _WIN32
 	}
 }
