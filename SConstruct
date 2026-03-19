@@ -25,7 +25,7 @@ if env["target"] in ["editor", "template_debug"]:
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
-        "addons/dwm/bin/libgdexample.{}.{}.framework/libgdexample.{}.{}".format(
+        "addons/dwm/bin/libgodot_dwm.{}.{}.framework/libgodot_dwm.{}.{}".format(
             env["platform"], env["target"], env["platform"], env["target"]
         ),
         source=sources,
@@ -33,19 +33,19 @@ if env["platform"] == "macos":
 elif env["platform"] == "ios":
     if env["ios_simulator"]:
         library = env.StaticLibrary(
-            "addons/dwm/bin/libgdexample.{}.{}.simulator.a".format(env["platform"], env["target"]),
+            "addons/dwm/bin/libgodot_dwm.{}.{}.simulator.a".format(env["platform"], env["target"]),
             source=sources,
         )
     else:
         library = env.StaticLibrary(
-            "addons/dwm/bin/libgdexample.{}.{}.a".format(env["platform"], env["target"]),
+            "addons/dwm/bin/libgodot_dwm.{}.{}.a".format(env["platform"], env["target"]),
             source=sources,
         )
 else:
     env.Append(LIBS=['user32', 'gdi32', 'dwmapi'])
     env.Append(LIBS=['uxtheme'])
     library = env.SharedLibrary(
-        "addons/dwm/bin/libgdexample{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        "addons/dwm/bin/godot_dwm{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
     )
 
