@@ -9,6 +9,8 @@
 		This class is only available on Windows platforms and most methods require a [Window] node as target. All methods are static, so you don't need to instantiate the class.
 		
 		[b]Note:[/b] Some features require specific Windows versions. For example, [method set_systembackdrop_type] requires Windows 11 Build 22000 or later for Mica effects.
+		
+		[b]Important:[/b] When changing window characteristics, the window must be visible and have native decorations. and the window is visible before calling DWM methods.
 	</description>
 	<tutorials>
 		<link title="Custom Window Title Bars in Godot">https://docs.godotengine.org/en/stable/tutorials/ui/custom_window_title_bars.html</link>

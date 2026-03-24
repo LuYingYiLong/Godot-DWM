@@ -43,7 +43,7 @@ namespace godot {
 
 		DisplayServer* display_server = DisplayServer::get_singleton();
 		ERR_FAIL_COND_V_MSG(!display_server, nullptr, "Failed to get the DisplayServer singleton.");
-		
+
 		// 获取本机窗口句柄
 		int64_t hwnd_int = display_server->window_get_native_handle(DisplayServer::WINDOW_HANDLE, window_node->get_window_id());
 		ERR_FAIL_COND_V_MSG(!hwnd_int, nullptr, "Got null native handle.");
@@ -71,11 +71,10 @@ namespace godot {
 
 	void DWM::set_title_bar_color(Window* target_window, const Color& color, const bool sync_border) {
 #ifdef _WIN32
-		// 获取Godot窗口句柄
 		HWND hwnd = _get_godot_window_handle(target_window);
 		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");
 
-		// 将Color转换为COLORREF ([0.0, 1.0]范围转换为[0, 255]范围)
+		// 将 Color 转换为 COLORREF ([0.0, 1.0] 范围转换为 [0, 255] 范围)
 		int r = CLAMP(color.r * 255, 0, 255);
 		int g = CLAMP(color.g * 255, 0, 255);
 		int b = CLAMP(color.b * 255, 0, 255);
@@ -164,7 +163,7 @@ namespace godot {
 		HRESULT hr = DwmGetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, &text_color, sizeof(text_color));
 		ERR_FAIL_COND_V_MSG(FAILED(hr), Color(1, 1, 1, 1), "Failed to get title bar text color - feature may not be supported");
 
-		// 提取RGB分量
+		// 提取 RGB 分量
 		uint8_t r = (text_color >> 16) & 0xFF;
 		uint8_t g = (text_color >> 8) & 0xFF;
 		uint8_t b = text_color & 0xFF;
@@ -197,7 +196,7 @@ namespace godot {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
 		ERR_FAIL_COND_MSG(!hwnd, "HWND is invalid");
-		
+
 		COLORREF default_color = 0xFFFFFFFF;
 		DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &default_color, sizeof(default_color));
 		DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, &default_color, sizeof(default_color));
@@ -244,7 +243,7 @@ namespace godot {
 		HWND hwnd = _get_godot_window_handle(target_window);
 		ERR_FAIL_COND_MSG(!hwnd, "HWND is invalid");
 
-		MARGINS margins;
+		MARGINS margins = {};
 		margins.cxLeftWidth = left;
 		margins.cxRightWidth = right;
 		margins.cyTopHeight = top;
@@ -260,19 +259,17 @@ namespace godot {
 		BOOL opaque = FALSE;
 
 		HRESULT hr = DwmGetColorizationColor(&color, &opaque);
-		if (SUCCEEDED(hr)) {
-			// 提取RGB分量
-			uint8_t r = (color >> 16) & 0xFF;
-			uint8_t g = (color >> 8) & 0xFF;
-			uint8_t b = color & 0xFF;
-			// 转换为[0.0, 1.0]范围的Color
-			return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
-		} else {
-			UtilityFunctions::push_error("Failed to get colorization color - feature may not be supported");
-			return Color(1.0f, 1.0f, 1.0f, 1.0f); // 默认白色
-		}
+		ERR_FAIL_COND_V_MSG(FAILED(hr), Color(1, 1, 1, 1), "Failed to get colorization color - feature may not be supported");
+
+		// 提取 RGB 分量
+		uint8_t r = (color >> 16) & 0xFF;
+		uint8_t g = (color >> 8) & 0xFF;
+		uint8_t b = color & 0xFF;
+
+		// 转换为 [0.0, 1.0] 范围的 Color
+		return Color(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
 #else
-		return Color(1.0f, 1.0f, 1.0f, 1.0f); // 默认白色
+		return Color(1.0f, 1.0f, 1.0f, 1.0f);
 #endif
 	}
 
@@ -354,7 +351,7 @@ namespace godot {
 #endif
 	}
 
-	void DWM::enable_hostbackdropbrush(Window * target_window, bool enable) {
+	void DWM::enable_hostbackdropbrush(Window* target_window, bool enable) {
 #ifdef _WIN32
 		HWND hwnd = _get_godot_window_handle(target_window);
 		ERR_FAIL_COND_MSG(!IsWindow(hwnd), "HWND is invalid");

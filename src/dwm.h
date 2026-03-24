@@ -48,7 +48,7 @@ namespace godot {
 			SYSTEMBACKDROP_TYPE_TABBEDWINDOW
 		};
 
-		static bool is_composition_enabled();								// 检查DWM合成是否启用
+		static bool is_composition_enabled();								// 检查 DWM 合成是否启用
 		static void set_title_bar_color(
 			Window* target_window,
 			const Color& color,
@@ -90,7 +90,7 @@ namespace godot {
 			Window* target_window,
 			SystembackdropType p_type = SYSTEMBACKDROP_TYPE_AUTO
 		);																	// 指定窗口的系统绘制背景材料
-		static void enable_mmcss(bool enable);
+		static void enable_mmcss(bool enable);								// 启动 MMCSS
 	};
 }
 
