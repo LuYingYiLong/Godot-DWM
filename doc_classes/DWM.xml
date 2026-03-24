@@ -5,11 +5,8 @@
 	</brief_description>
 	<description>
 		The [DWM] class allows you to interact with Windows Desktop Window Manager to enable modern Windows 11/10 visual effects such as Mica, Acrylic backdrop materials, custom title bar colors, dark mode, and extend the window frame into client area.
-		
 		This class is only available on Windows platforms and most methods require a [Window] node as target. All methods are static, so you don't need to instantiate the class.
-		
 		[b]Note:[/b] Some features require specific Windows versions. For example, [method set_systembackdrop_type] requires Windows 11 Build 22000 or later for Mica effects.
-		
 		[b]Important:[/b] When changing window characteristics, the window must be visible and have native decorations. and the window is visible before calling DWM methods.
 	</description>
 	<tutorials>
@@ -22,7 +19,6 @@
 			<param index="1" name="enable" type="bool" />
 			<description>
 				Enables or disables dark mode for the specified window's title bar and borders. This affects the native window decorations when using [member DisplayServer.window_set_flag] with [constant DisplayServer.WINDOW_FLAG_BORDERLESS] set to [code]false[/code].
-				
 				[codeblock]
 				# Enable dark mode for the main window
 				DWM.enable_dark_mode(get_window(), true)
@@ -53,7 +49,6 @@
 			<param index="4" name="bottom" type="int" />
 			<description>
 				Extends the window frame into the client area by specified margins. This is useful for creating custom title bars while keeping native window controls. Set margins to [code]-1[/code] to extend fully in that direction.
-				
 				[codeblock]
 				# Extend only the top for a custom title bar
 				DWM.extend_frame_into_client_area(get_window(), 0, 0, 32, 0)
@@ -77,8 +72,7 @@
 			<return type="Dictionary" />
 			<param index="0" name="target_window" type="Window" />
 			<description>
-				Returns timing information about the DWM composition process as a Dictionary. Contains data like refresh rate, composition rate, and frame delays.
-				
+				Returns timing information about the DWM composition process as a Dictionary. Contains data like refresh rate, composition rate, and frame delays.	
 				[b]Note:[/b] This is intended for debugging and performance monitoring purposes.
 			</description>
 		</method>
@@ -127,7 +121,6 @@
 				- [constant MAINWINDOW]: Mica effect for main windows (Windows 11+)
 				- [constant TRANSIENTWINDOW]: Acrylic effect for transient windows
 				- [constant TABBEDWINDOW]: Mica Alt effect for tabbed interfaces
-				
 				[codeblock]
 				# Apply Mica effect to main window
 				DWM.set_systembackdrop_type(get_window(), DWM.MAINWINDOW)
@@ -141,7 +134,6 @@
 			<param index="2" name="sync_border" type="bool" default="true" />
 			<description>
 				Sets a custom color for the title bar. If [param sync_border] is [code]true[/code], the border color will be synchronized with the title bar color.
-				
 				[codeblock]
 				# Set a red title bar
 				DWM.set_title_bar_color(get_window(), Color(0.8, 0.1, 0.1))
