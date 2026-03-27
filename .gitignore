@@ -18,3 +18,4 @@ AGENTS.md
 .sconsign.dblite
 *.obj
 /.vscode
+Godot-DWM.vcxproj.user
