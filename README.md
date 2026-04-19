@@ -1,5 +1,5 @@
 <p align="center">
-   <img width="3400" height="920" alt="dwm_banner" src="https://github.com/user-attachments/assets/7aa6b1fd-0e71-4577-9b04-574e37249d8a" />
+   <img alt="dwm_banner" src="https://github.com/user-attachments/assets/7aa6b1fd-0e71-4577-9b04-574e37249d8a" />
 </p>
 
 <h1 align="center">Godot-DWM</h1>
