@@ -1,28 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="DWM" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
-		Provides access to Windows Desktop Window Manager (DWM) APIs for advanced window effects and customization.
+		Provides Windows Desktop Window Manager (DWM) integration for Godot windows.
 	</brief_description>
 	<description>
-		The [DWM] class allows you to interact with Windows Desktop Window Manager to enable modern Windows 11/10 visual effects such as Mica, Acrylic backdrop materials, custom title bar colors, dark mode, and extend the window frame into client area.
-		This class is only available on Windows platforms and most methods require a [Window] node as target. All methods are static, so you don't need to instantiate the class.
-		[b]Note:[/b] Some features require specific Windows versions. For example, [method set_systembackdrop_type] requires Windows 11 Build 22000 or later for Mica effects.
-		[b]Important:[/b] When changing window characteristics, the window must be visible and have native decorations. and the window is visible before calling DWM methods.
+		The [DWM] class exposes Windows DWM APIs for native decoration colors, dark mode, frame extension, Mica/Acrylic system backdrops, DWM timing data, and lower-level window attributes.
+		This class is Windows-only. Most methods require a visible [Window] with native decorations.
 	</description>
 	<tutorials>
 		<link title="Custom Window Title Bars in Godot">https://docs.godotengine.org/en/stable/tutorials/ui/custom_window_title_bars.html</link>
-		</tutorials>
+	</tutorials>
 	<methods>
 		<method name="enable_dark_mode" qualifiers="static">
 			<return type="void" />
 			<param index="0" name="target_window" type="Window" />
 			<param index="1" name="enable" type="bool" />
 			<description>
-				Enables or disables dark mode for the specified window's title bar and borders. This affects the native window decorations when using [member DisplayServer.window_set_flag] with [constant DisplayServer.WINDOW_FLAG_BORDERLESS] set to [code]false[/code].
-				[codeblock]
-				# Enable dark mode for the main window
-				DWM.enable_dark_mode(get_window(), true)
-				[/codeblock]
+				Enables or disables immersive dark mode for the native window frame.
 			</description>
 		</method>
 		<method name="enable_hostbackdropbrush" qualifiers="static">
@@ -30,14 +24,14 @@
 			<param index="0" name="target_window" type="Window" />
 			<param index="1" name="enable" type="bool" />
 			<description>
-				Enables or disables the host backdrop brush effect for the window. This is an older DWM effect that allows the window behind to show through. Consider using [method set_systembackdrop_type] for modern alternatives.
+				Sets [constant ATTR_USE_HOSTBACKDROPBRUSH] for the window.
 			</description>
 		</method>
 		<method name="enable_mmcss" qualifiers="static">
 			<return type="void" />
 			<param index="0" name="enable" type="bool" />
 			<description>
-				Enables or disables Multimedia Class Scheduler Service (MMCSS) for the current process. This can help improve performance for multimedia applications by prioritizing threads.
+				Enables or disables DWM participation in MMCSS scheduling for the current process.
 			</description>
 		</method>
 		<method name="extend_frame_into_client_area" qualifiers="static">
@@ -48,58 +42,151 @@
 			<param index="3" name="top" type="int" />
 			<param index="4" name="bottom" type="int" />
 			<description>
-				Extends the window frame into the client area by specified margins. This is useful for creating custom title bars while keeping native window controls. Set margins to [code]-1[/code] to extend fully in that direction.
-				[codeblock]
-				# Extend only the top for a custom title bar
-				DWM.extend_frame_into_client_area(get_window(), 0, 0, 32, 0)
-				[/codeblock]
+				Calls [code]DwmExtendFrameIntoClientArea[/code] with the supplied margins. Use [code]-1[/code] margins for the sheet-of-glass effect.
+			</description>
+		</method>
+		<method name="force_disable_transitions" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="disable" type="bool" />
+			<description>
+				Sets [constant ATTR_TRANSITIONS_FORCEDISABLED]. Returns [code]true[/code] when DWM accepts the attribute.
 			</description>
 		</method>
 		<method name="get_border_color" qualifiers="static">
 			<return type="Color" />
 			<param index="0" name="target_window" type="Window" />
 			<description>
-				Returns the current border color of the window as a [Color].
+				Returns the native border color.
+			</description>
+		</method>
+		<method name="get_caption_button_bounds" qualifiers="static">
+			<return type="Rect2i" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns [constant ATTR_CAPTION_BUTTON_BOUNDS] in screen coordinates.
 			</description>
 		</method>
 		<method name="get_colorization_color" qualifiers="static">
 			<return type="Color" />
 			<description>
-				Returns the user's global DWM colorization color (the color used for window borders and taskbar). This respects the user's Windows personalization settings.
+				Returns the user's global DWM colorization color.
 			</description>
 		</method>
 		<method name="get_composition_timing_info" qualifiers="static">
 			<return type="Dictionary" />
 			<param index="0" name="target_window" type="Window" />
 			<description>
-				Returns timing information about the DWM composition process as a Dictionary. Contains data like refresh rate, composition rate, and frame delays.	
-				[b]Note:[/b] This is intended for debugging and performance monitoring purposes.
+				Returns DWM composition timing counters and rates for debugging and performance monitoring.
+			</description>
+		</method>
+		<method name="get_native_window_handle" qualifiers="static">
+			<return type="int" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns the raw HWND value as an integer, or [code]0[/code] when unavailable.
 			</description>
 		</method>
 		<method name="get_title_bar_color" qualifiers="static">
 			<return type="Color" />
 			<param index="0" name="target_window" type="Window" />
 			<description>
-				Returns the current title bar color of the window as a [Color].
+				Returns the native caption color.
+			</description>
+		</method>
+		<method name="get_title_bar_text_color" qualifiers="static">
+			<return type="Color" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns the native caption text color.
+			</description>
+		</method>
+		<method name="get_visible_frame_border_thickness" qualifiers="static">
+			<return type="int" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns [constant ATTR_VISIBLE_FRAME_BORDER_THICKNESS].
+			</description>
+		</method>
+		<method name="get_window_attribute_bool" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="attribute" type="int" enum="DWM.WindowAttribute" />
+			<description>
+				Reads a BOOL-sized DWM window attribute.
+			</description>
+		</method>
+		<method name="get_window_attribute_color" qualifiers="static">
+			<return type="Color" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="attribute" type="int" enum="DWM.WindowAttribute" />
+			<description>
+				Reads a COLORREF-sized DWM window attribute.
+			</description>
+		</method>
+		<method name="get_window_attribute_int" qualifiers="static">
+			<return type="int" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="attribute" type="int" enum="DWM.WindowAttribute" />
+			<description>
+				Reads a DWORD/int-sized DWM window attribute.
+			</description>
+		</method>
+		<method name="get_window_attribute_rect" qualifiers="static">
+			<return type="Rect2i" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="attribute" type="int" enum="DWM.WindowAttribute" />
+			<description>
+				Reads a RECT-sized DWM window attribute and returns it as [Rect2i].
+			</description>
+		</method>
+		<method name="get_window_bounds" qualifiers="static">
+			<return type="Rect2i" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="extended_frame" type="bool" default="true" />
+			<description>
+				Returns the extended DWM frame bounds when [param extended_frame] is [code]true[/code], otherwise the Win32 window rect.
+			</description>
+		</method>
+		<method name="get_window_corner_preference" qualifiers="static">
+			<return type="int" enum="DWM.WindowCornerPreference" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns [constant ATTR_WINDOW_CORNER_PREFERENCE].
+			</description>
+		</method>
+		<method name="get_window_style" qualifiers="static">
+			<return type="int" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="extended" type="bool" default="false" />
+			<description>
+				Returns [code]GWL_STYLE[/code] or [code]GWL_EXSTYLE[/code] using [code]GetWindowLongPtrW[/code].
 			</description>
 		</method>
 		<method name="is_composition_enabled" qualifiers="static">
 			<return type="bool" />
 			<description>
-				Returns [code]true[/code] if DWM composition is enabled system-wide. Composition is required for most visual effects.
+				Returns whether DWM composition is enabled.
 			</description>
 		</method>
 		<method name="is_title_bar_coloring_supported" qualifiers="static">
 			<return type="bool" />
 			<description>
-				Returns [code]true[/code] if the current Windows version supports custom title bar coloring. Always check this before calling color-related methods.
+				Returns [code]true[/code] on Windows 11 Build 22000 or newer.
+			</description>
+		</method>
+		<method name="is_window_valid" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<description>
+				Returns whether the Godot window maps to a valid HWND.
 			</description>
 		</method>
 		<method name="reset_to_default_colors" qualifiers="static">
 			<return type="void" />
 			<param index="0" name="target_window" type="Window" />
 			<description>
-				Resets the window's title bar and border colors to system defaults.
+				Resets caption, text, and border colors to DWM defaults.
 			</description>
 		</method>
 		<method name="set_border_color" qualifiers="static">
@@ -107,24 +194,47 @@
 			<param index="0" name="target_window" type="Window" />
 			<param index="1" name="color" type="Color" />
 			<description>
-				Sets a custom color for the window border.
+				Sets the native border color.
+			</description>
+		</method>
+		<method name="set_excluded_from_peek" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="exclude" type="bool" />
+			<description>
+				Sets [constant ATTR_EXCLUDED_FROM_PEEK].
+			</description>
+		</method>
+		<method name="set_flip3d_policy" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="policy" type="int" enum="DWM.Flip3DPolicy" />
+			<description>
+				Sets [constant ATTR_FLIP3D_POLICY].
+			</description>
+		</method>
+		<method name="set_non_client_rendering_policy" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="policy" type="int" enum="DWM.NonClientRenderingPolicy" />
+			<description>
+				Sets [constant ATTR_NCRENDERING_POLICY].
+			</description>
+		</method>
+		<method name="set_peek_disallowed" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="disallow" type="bool" />
+			<description>
+				Sets [constant ATTR_DISALLOW_PEEK].
 			</description>
 		</method>
 		<method name="set_systembackdrop_type" qualifiers="static">
 			<return type="void" />
 			<param index="0" name="target_window" type="Window" />
-			<param index="1" name="type" type="int" enum="DWM.SystembackdropType" />
+			<param index="1" name="type" type="int" enum="DWM.SystembackdropType" default="0" />
 			<description>
-				Sets the system backdrop material type for the window. Available options are:
-				- [constant AUTO]: Automatically choose based on window type
-				- [constant NONE]: No backdrop effect
-				- [constant MAINWINDOW]: Mica effect for main windows (Windows 11+)
-				- [constant TRANSIENTWINDOW]: Acrylic effect for transient windows
-				- [constant TABBEDWINDOW]: Mica Alt effect for tabbed interfaces
-				[codeblock]
-				# Apply Mica effect to main window
-				DWM.set_systembackdrop_type(get_window(), DWM.MAINWINDOW)
-				[/codeblock]
+				Sets [constant ATTR_SYSTEMBACKDROP_TYPE]. Use [constant MAINWINDOW] for Mica, [constant TRANSIENTWINDOW] for Acrylic, and [constant TABBEDWINDOW] for Mica Alt where supported.
 			</description>
 		</method>
 		<method name="set_title_bar_color" qualifiers="static">
@@ -133,29 +243,118 @@
 			<param index="1" name="color" type="Color" />
 			<param index="2" name="sync_border" type="bool" default="true" />
 			<description>
-				Sets a custom color for the title bar. If [param sync_border] is [code]true[/code], the border color will be synchronized with the title bar color.
-				[codeblock]
-				# Set a red title bar
-				DWM.set_title_bar_color(get_window(), Color(0.8, 0.1, 0.1))
-				[/codeblock]
+				Sets the native caption color and automatically chooses black or white caption text. When [param sync_border] is [code]true[/code], the border color is set to the same value.
+			</description>
+		</method>
+		<method name="set_title_bar_text_color" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="color" type="Color" />
+			<description>
+				Sets the native caption text color.
+			</description>
+		</method>
+		<method name="set_window_attribute_bool" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="attribute" type="int" enum="DWM.WindowAttribute" />
+			<param index="2" name="value" type="bool" />
+			<description>
+				Writes a BOOL-sized DWM window attribute.
+			</description>
+		</method>
+		<method name="set_window_attribute_color" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="attribute" type="int" enum="DWM.WindowAttribute" />
+			<param index="2" name="color" type="Color" />
+			<description>
+				Writes a COLORREF-sized DWM window attribute.
+			</description>
+		</method>
+		<method name="set_window_attribute_int" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="attribute" type="int" enum="DWM.WindowAttribute" />
+			<param index="2" name="value" type="int" />
+			<description>
+				Writes a DWORD/int-sized DWM window attribute.
+			</description>
+		</method>
+		<method name="set_window_corner_preference" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="preference" type="int" enum="DWM.WindowCornerPreference" />
+			<description>
+				Sets [constant ATTR_WINDOW_CORNER_PREFERENCE].
+			</description>
+		</method>
+		<method name="set_window_style" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="style" type="int" />
+			<param index="2" name="extended" type="bool" default="false" />
+			<param index="3" name="apply_frame_change" type="bool" default="true" />
+			<description>
+				Writes [code]GWL_STYLE[/code] or [code]GWL_EXSTYLE[/code] using [code]SetWindowLongPtrW[/code].
+			</description>
+		</method>
+		<method name="set_window_style_bits" qualifiers="static">
+			<return type="bool" />
+			<param index="0" name="target_window" type="Window" />
+			<param index="1" name="mask" type="int" />
+			<param index="2" name="enabled" type="bool" />
+			<param index="3" name="extended" type="bool" default="false" />
+			<param index="4" name="apply_frame_change" type="bool" default="true" />
+			<description>
+				Enables or disables selected Win32 window style bits without replacing the whole style value.
 			</description>
 		</method>
 	</methods>
 	<constants>
-		<constant name="AUTO" value="0" enum="SystembackdropType">
-			Automatically selects an appropriate backdrop type based on the window's context and type.
-		</constant>
-		<constant name="NONE" value="1" enum="SystembackdropType">
-			No system backdrop effect; uses traditional rendering.
-		</constant>
-		<constant name="MAINWINDOW" value="2" enum="SystembackdropType">
-			Applies the Mica backdrop material, ideal for main application windows. Available on Windows 11 Build 22000+.
-		</constant>
-		<constant name="TRANSIENTWINDOW" value="3" enum="SystembackdropType">
-			Applies the Acrylic backdrop material, suitable for transient windows like dialogs and flyouts.
-		</constant>
-		<constant name="TABBEDWINDOW" value="4" enum="SystembackdropType">
-			Applies the Mica Alt backdrop material, optimized for applications with tabbed interfaces.
-		</constant>
+		<constant name="AUTO" value="0" enum="SystembackdropType" />
+		<constant name="NONE" value="1" enum="SystembackdropType" />
+		<constant name="MAINWINDOW" value="2" enum="SystembackdropType" />
+		<constant name="TRANSIENTWINDOW" value="3" enum="SystembackdropType" />
+		<constant name="TABBEDWINDOW" value="4" enum="SystembackdropType" />
+		<constant name="SYSTEMBACKDROP_TYPE_AUTO" value="0" enum="SystembackdropType" />
+		<constant name="SYSTEMBACKDROP_TYPE_NONE" value="1" enum="SystembackdropType" />
+		<constant name="SYSTEMBACKDROP_TYPE_MAINWINDOW" value="2" enum="SystembackdropType" />
+		<constant name="SYSTEMBACKDROP_TYPE_TRANSIENTWINDOW" value="3" enum="SystembackdropType" />
+		<constant name="SYSTEMBACKDROP_TYPE_TABBEDWINDOW" value="4" enum="SystembackdropType" />
+		<constant name="CORNER_DEFAULT" value="0" enum="WindowCornerPreference" />
+		<constant name="CORNER_DO_NOT_ROUND" value="1" enum="WindowCornerPreference" />
+		<constant name="CORNER_ROUND" value="2" enum="WindowCornerPreference" />
+		<constant name="CORNER_ROUND_SMALL" value="3" enum="WindowCornerPreference" />
+		<constant name="NCRENDERING_USE_WINDOW_STYLE" value="0" enum="NonClientRenderingPolicy" />
+		<constant name="NCRENDERING_DISABLED" value="1" enum="NonClientRenderingPolicy" />
+		<constant name="NCRENDERING_ENABLED" value="2" enum="NonClientRenderingPolicy" />
+		<constant name="FLIP3D_DEFAULT" value="0" enum="Flip3DPolicy" />
+		<constant name="FLIP3D_EXCLUDE_BELOW" value="1" enum="Flip3DPolicy" />
+		<constant name="FLIP3D_EXCLUDE_ABOVE" value="2" enum="Flip3DPolicy" />
+		<constant name="ATTR_NCRENDERING_ENABLED" value="1" enum="WindowAttribute" />
+		<constant name="ATTR_NCRENDERING_POLICY" value="2" enum="WindowAttribute" />
+		<constant name="ATTR_TRANSITIONS_FORCEDISABLED" value="3" enum="WindowAttribute" />
+		<constant name="ATTR_ALLOW_NCPAINT" value="4" enum="WindowAttribute" />
+		<constant name="ATTR_CAPTION_BUTTON_BOUNDS" value="5" enum="WindowAttribute" />
+		<constant name="ATTR_NONCLIENT_RTL_LAYOUT" value="6" enum="WindowAttribute" />
+		<constant name="ATTR_FORCE_ICONIC_REPRESENTATION" value="7" enum="WindowAttribute" />
+		<constant name="ATTR_FLIP3D_POLICY" value="8" enum="WindowAttribute" />
+		<constant name="ATTR_EXTENDED_FRAME_BOUNDS" value="9" enum="WindowAttribute" />
+		<constant name="ATTR_HAS_ICONIC_BITMAP" value="10" enum="WindowAttribute" />
+		<constant name="ATTR_DISALLOW_PEEK" value="11" enum="WindowAttribute" />
+		<constant name="ATTR_EXCLUDED_FROM_PEEK" value="12" enum="WindowAttribute" />
+		<constant name="ATTR_CLOAK" value="13" enum="WindowAttribute" />
+		<constant name="ATTR_CLOAKED" value="14" enum="WindowAttribute" />
+		<constant name="ATTR_FREEZE_REPRESENTATION" value="15" enum="WindowAttribute" />
+		<constant name="ATTR_PASSIVE_UPDATE_MODE" value="16" enum="WindowAttribute" />
+		<constant name="ATTR_USE_HOSTBACKDROPBRUSH" value="17" enum="WindowAttribute" />
+		<constant name="ATTR_USE_IMMERSIVE_DARK_MODE" value="20" enum="WindowAttribute" />
+		<constant name="ATTR_WINDOW_CORNER_PREFERENCE" value="33" enum="WindowAttribute" />
+		<constant name="ATTR_BORDER_COLOR" value="34" enum="WindowAttribute" />
+		<constant name="ATTR_CAPTION_COLOR" value="35" enum="WindowAttribute" />
+		<constant name="ATTR_TEXT_COLOR" value="36" enum="WindowAttribute" />
+		<constant name="ATTR_VISIBLE_FRAME_BORDER_THICKNESS" value="37" enum="WindowAttribute" />
+		<constant name="ATTR_SYSTEMBACKDROP_TYPE" value="38" enum="WindowAttribute" />
 	</constants>
 </class>

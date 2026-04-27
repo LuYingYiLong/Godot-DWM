@@ -14,6 +14,7 @@ Windows Desktop Window Manager (DWM) integration for Godot 4. Provides access to
 - **Custom Title Bar** - Colors and frame extension for custom UI
 - **Dark Mode** - Native window decoration theming
 - **MMCSS Support** - Multimedia Class Scheduler for better performance
+- **Low-level DWM Access** - Raw DWM attributes, frame bounds, corner preferences, and Win32 style bits
 
 ## Requirements
 
@@ -23,21 +24,20 @@ Windows Desktop Window Manager (DWM) integration for Godot 4. Provides access to
 
 ## Installation
 
-1. Clone this repository:
-   ```bash
-   git clone --recursive https://github.com/LuYingYiLong/GodotDWM.git
-   ```
+Recommended: install Godot-DWM from the Godot Asset Library:
 
-2. Copy the `addons/dwm/` folder to your project's `addons/` directory
+**[Godot Asset Library - Godot-DWM](https://godotengine.org/asset-library/asset/4476)**
+
+You can also download a release from GitHub or build the GDExtension from source if you need the latest development version.
 
 ## Usage
 
 ```gdscript
-func _ready():
+func _ready() -> void:
     if OS.get_name() != "Windows":
         return
     
-    var window = get_window()
+    var window: Window = get_window()
     
     # Enable Mica effect
     DWM.set_systembackdrop_type(window, DWM.MAINWINDOW)
@@ -52,6 +52,26 @@ func _ready():
     DWM.extend_frame_into_client_area(window, 0, 0, 32, 0)
 ```
 
+## Low-level Usage
+
+```gdscript
+func _ready() -> void:
+    if OS.get_name() != "Windows":
+        return
+
+    var window: Window = get_window()
+
+    # Rounded corner control (Windows 11)
+    DWM.set_window_corner_preference(window, DWM.CORNER_ROUND_SMALL)
+
+    # Raw DWM attributes, useful when Microsoft adds new supported values
+    DWM.set_window_attribute_bool(window, DWM.ATTR_TRANSITIONS_FORCEDISABLED, true)
+    var frame_rect: Rect2i = DWM.get_window_bounds(window, true)
+
+    # Win32 style bits. Example: WS_THICKFRAME = 0x00040000
+    DWM.set_window_style_bits(window, 0x00040000, false)
+```
+
 ## System Backdrop Types
 
 | Type | Description |
@@ -61,6 +81,8 @@ func _ready():
 | `MAINWINDOW` | Mica effect (Windows 11) |
 | `TRANSIENTWINDOW` | Acrylic effect |
 | `TABBEDWINDOW` | Mica Alt effect (Windows 11) |
+
+The previous names (`SYSTEMBACKDROP_TYPE_MAINWINDOW`, etc.) are still available as aliases.
 
 ## Building from Source
 
